@@ -20,7 +20,7 @@ class Purchase(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.correlative_number:
-            self.correlative_number = f"PUR-{self.id}"
+            self.correlative_number = f"PURSHASE-{self.id}"
             self.total = sum(item.subtotal for item in self.items.all())
         super().save(*args, **kwargs)
 
