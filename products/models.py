@@ -2,12 +2,9 @@ from django.db import models
 from django.utils.text import slugify
 from mptt.models import MPTTModel, TreeForeignKey
 
-
-
 class Category(MPTTModel):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-    level = models.IntegerField(default=0)
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -19,10 +16,14 @@ class Category(MPTTModel):
 
     def __str__(self):
         return self.name
-    
-    
+
+
 class Supplier(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True, db_index=True)
+    url = models.URLField(blank=True, null=True, help_text="URL of the supplier's online store")
+    supplier_type = models.CharField(max_length=100, blank=True, null=True, help_text="Type of supplier (e.g., wholesaler, retailer)")
+    description = models.TextField(blank=True, null=True, help_text="Brief description of the supplier")
+    image = models.ImageField(upload_to='suppliers/', blank=True, null=True, help_text="Image representing the supplier")
 
     def __str__(self):
         return self.name
@@ -62,19 +63,19 @@ class Product(models.Model):
 
 
 class Variation(models.Model):
-    product = models.ForeignKey(Product, related_name="product_attrs", on_delete=models.CASCADE)
     VAR_CATEGORIES = [
         ('size', 'Size'),
         ('color', 'Color'),
     ]
-    category = models.CharField(max_length=120, choices=VAR_CATEGORIES, default='size')
-    name = models.CharField(max_length=120, help_text="Variation name")
     STATE = [
         ('available', 'Available'),
         ('not available', 'Not available'),
         ('deleted', 'Deleted'),
     ]
-    state = models.BooleanField(max_length=120, choices=STATE, default='available')
+    product = models.ForeignKey(Product, related_name="product_attrs", on_delete=models.CASCADE)
+    category = models.CharField(max_length=120, choices=VAR_CATEGORIES, default='size')
+    name = models.CharField(max_length=120, help_text="Variation name")
+    state = models.CharField(max_length=120, choices=STATE, default='available')
     stock = models.PositiveIntegerField(default=1, help_text="Available stock of the product")
 
     def __str__(self):
