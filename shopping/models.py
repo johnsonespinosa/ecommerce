@@ -16,7 +16,7 @@ class Purchase(models.Model):
     delivery_date = models.DateField(null=True, blank=True, help_text="Delivery date")
 
     def __str__(self):
-        return f"Purchase {self.id} - {self.supplier.name}"
+        return f"Purchase {self.correlative_number} - {self.supplier.name}"
     
     def save(self, *args, **kwargs):
         if not self.correlative_number:
