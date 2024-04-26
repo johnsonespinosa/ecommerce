@@ -8,6 +8,7 @@ class CategoryAdmin(MPTTModelAdmin):
     list_display = ('name', 'parent')
     search_fields = ('name',)
     list_filter = ('parent',)
+    list_per_page = 15
 
 # Para el proveedor, simplemente registramos el modelo con la configuración básica
 @admin.register(Supplier)
@@ -23,6 +24,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     list_filter = ('category', 'supplier', 'created_at', 'updated_at')
     readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 15
 
 # Para la variación, personalizamos el panel de administración para mostrar información relevante
 @admin.register(Variation)
