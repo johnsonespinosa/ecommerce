@@ -1,0 +1,10 @@
+django
+pillow
+psycopg2
+django-environ
+python-decouple
+django-filter
+django-crispy-forms
+django-admin-interface
+django-mptt
+django-debug-toolbar
