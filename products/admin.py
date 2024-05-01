@@ -1,56 +1,72 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
-from .models import Category, Supplier, Product, Variation
 
-# Configuración del panel de administración para la categoría
+from .forms import ProductForm
+from .inlines import VariationInline
+from .models import Category, Supplier, Product, Variation, Inventory, ProductIssue
+from .resources import ProductResource
+
+
+# Admin panel settings for categories
 @admin.register(Category)
 class CategoryAdmin(MPTTModelAdmin):
-    """
-    Administración de categorías utilizando MPTTModelAdmin para aprovechar las funcionalidades de MPTT.
-    """
-    list_display = ('name', 'parent') # Campos a mostrar en la lista de categorías
-    search_fields = ('name',) # Campos para búsqueda
-    list_filter = ('parent',) # Filtros disponibles en la lista de categorías
-    list_per_page = 15 # Número de categorías por página en la lista
+    list_display = ('name', 'parent')
+    search_fields = ('name',)
+    list_per_page = 10
 
-# Configuración básica del panel de administración para el proveedor
+
+# Admin panel settings for suppliers
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
-    """
-    Administración de proveedores con configuración básica.
-    """
-    list_display = ('name', 'url', 'supplier_type') # Campos a mostrar en la lista de proveedores
-    search_fields = ('name', 'url', 'supplier_type') # Campos para búsqueda
-    list_filter = ('supplier_type',) # Filtros disponibles en la lista de proveedores
+    list_display = ('name', 'url', 'supplier_type', 'description')
+    search_fields = ('name', 'url', 'supplier_type')
 
-# Configuración personalizada del panel de administración para el producto
+
+# Admin panel settings for products
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    """
-    Administración de productos con campos relevantes incluidos.
-    """
-    list_display = ('name', 'category', 'supplier', 'purchase_price', 'sale_price', 'offer_price', 'created_at', 'updated_at', 'stock') # Campos a mostrar en la lista de productos
-    search_fields = ('name', 'description') # Campos para búsqueda
-    list_filter = ('category', 'supplier', 'created_at', 'updated_at') # Filtros disponibles en la lista de productos
-    readonly_fields = ('created_at', 'updated_at') # Campos de solo lectura
-    list_per_page = 15 # Número de productos por página en la lista
-    ordering = ('name', 'category', 'supplier', 'purchase_price', 'sale_price', 'offer_price', 'created_at', 'updated_at', 'stock') # Campos a mostrar en la lista de productos
+    form = ProductForm
+    resource_class = ProductResource
+    list_select_related = ('category', 'supplier')
+    list_prefetch_related = ('variations',)
+    inlines = [VariationInline]
+    search_fields = ('name', 'description', 'category__name', 'supplier__name')
+    list_filter = (
+        ('supplier', admin.RelatedOnlyFieldListFilter),
+        ('created_at', admin.DateFieldListFilter),
+    )
+    readonly_fields = ('created_at',)
+    list_per_page = 10
+    ordering = ('name', 'category', 'supplier', 'purchase_price', 'sale_price', 'created_at')
+    list_display = ('name', 'category', 'supplier', 'formatted_price', 'created_at', 'stock', 'is_available')
 
-    # Métodos personalizados para calcular y mostrar el margen de beneficio
-    def profit_margin(self, obj):
-        return obj.profit_margin()
-    profit_margin.short_description = 'Margen de beneficio'
+    def is_available(self, obj):
+        return obj.stock > 0
 
-    def total_profit_margin(self, obj):
-        return Product.total_profit_margin()
-    total_profit_margin.short_description = 'Margen de beneficio total'
+    is_available.boolean = True
+    is_available.short_description = 'Available'
 
-# Configuración personalizada del panel de administración para la variación
-@admin.register(Variation)
-class VariationAdmin(admin.ModelAdmin):
-    """
-    Administración de variaciones con información relevante mostrada.
-    """
-    list_display = ('name', 'product', 'category', 'state') # Campos a mostrar en la lista de variaciones
-    search_fields = ('name', 'product__name') # Campos para búsqueda
-    list_filter = ('category', 'state') # Filtros disponibles en la lista de variaciones
+    def formatted_price(self, obj):
+        return f"{obj.purchase_price} - {obj.sale_price} - {obj.profit_margin}"
+
+    formatted_price.short_description = 'Price'
+
+
+# Admin panel settings for variations
+# @admin.register(Variation)
+# class VariationAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'product', 'category', 'state')
+#     search_fields = ('name', 'product__name')
+#     list_filter = ('category', 'state')
+
+
+@admin.register(Inventory)
+class InventoryAdmin(admin.ModelAdmin):
+    list_display = ('product', 'current_stock', 'min_stock', 'max_stock', 'updated_at')
+    search_fields = ('product__name',)
+
+
+@admin.register(ProductIssue)
+class ProductIssueAdmin(admin.ModelAdmin):
+    list_display = ('product', 'issue_type', 'notes')
+    search_fields = ('product__name', 'issue_type')
